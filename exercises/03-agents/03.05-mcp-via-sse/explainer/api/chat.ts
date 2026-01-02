@@ -5,8 +5,7 @@ import {
   streamText,
   type UIMessage,
 } from 'ai';
-
-import { experimental_createMCPClient as createMCPClient } from 'ai';
+import { createMCPClient } from '@ai-sdk/mcp';
 
 if (!process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
   throw new Error('GITHUB_PERSONAL_ACCESS_TOKEN is not set');
@@ -26,9 +25,11 @@ export const POST = async (req: Request): Promise<Response> => {
     },
   });
 
+  const modelMessages = await convertToModelMessages(messages);
+
   const result = streamText({
-    model: google('gemini-2.5-flash'),
-    messages: convertToModelMessages(messages),
+    model: 'gemini-2.5-flash',
+    messages: modelMessages,
     system: `
       You are a helpful assistant that can use the GitHub API to interact with the user's GitHub account.
     `,
