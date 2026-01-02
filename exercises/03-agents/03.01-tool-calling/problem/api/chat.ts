@@ -6,8 +6,9 @@ import {
   tool,
   type UIMessage,
 } from 'ai';
-import { z } from 'zod';
-import * as fsTools from './file-system-functionality.ts';
+import { deletePath, fileSystemTools, readFile, writeFile } from './file-system-functionality.ts';
+import z from 'zod';
+
 
 export const POST = async (req: Request): Promise<Response> => {
   const body: { messages: UIMessage[] } = await req.json();
@@ -32,93 +33,40 @@ export const POST = async (req: Request): Promise<Response> => {
 
       Use markdown files to store information.
     `,
+    // TODO: add the tools to the streamText call,
     tools: {
       writeFile: tool({
-        description: 'Write to a file',
+        name: 'writeFile',
         inputSchema: z.object({
-          path: z
-            .string()
-            .describe('The path to the file to create'),
-          content: z
-            .string()
-            .describe('The content of the file to create'),
+          path: z.string(),
+          content: z.string(),
         }),
         execute: async ({ path, content }) => {
-          return fsTools.writeFile(path, content);
-        },
-      }),
+          return fileSystemTools.writeFile(path, content);
+      }  })
+      ,
+
       readFile: tool({
-        description: 'Read a file',
+        name: 'readFile',
         inputSchema: z.object({
-          path: z
-            .string()
-            .describe('The path to the file to read'),
+          path: z.string(),
         }),
         execute: async ({ path }) => {
-          return fsTools.readFile(path);
+          return fileSystemTools.readFile(path);
         },
       }),
       deletePath: tool({
-        description: 'Delete a file or directory',
+        name: 'deletePath',
         inputSchema: z.object({
-          path: z
-            .string()
-            .describe(
-              'The path to the file or directory to delete',
-            ),
+          path: z.string(),
         }),
         execute: async ({ path }) => {
-          return fsTools.deletePath(path);
-        },
-      }),
-      listDirectory: tool({
-        description: 'List a directory',
-        inputSchema: z.object({
-          path: z
-            .string()
-            .describe('The path to the directory to list'),
-        }),
-        execute: async ({ path }) => {
-          return fsTools.listDirectory(path);
-        },
-      }),
-      createDirectory: tool({
-        description: 'Create a directory',
-        inputSchema: z.object({
-          path: z
-            .string()
-            .describe('The path to the directory to create'),
-        }),
-        execute: async ({ path }) => {
-          return fsTools.createDirectory(path);
-        },
-      }),
-      exists: tool({
-        description: 'Check if a file or directory exists',
-        inputSchema: z.object({
-          path: z
-            .string()
-            .describe(
-              'The path to the file or directory to check',
-            ),
-        }),
-        execute: async ({ path }) => {
-          return fsTools.exists(path);
-        },
-      }),
-      searchFiles: tool({
-        description: 'Search for files',
-        inputSchema: z.object({
-          pattern: z
-            .string()
-            .describe('The pattern to search for'),
-        }),
-        execute: async ({ pattern }) => {
-          return fsTools.searchFiles(pattern);
+          return fileSystemTools.deletePath(path);
         },
       }),
     },
-    stopWhen: [stepCountIs(10)],
+
+    stopWhen: stepCountIs(3),
   });
 
   return result.toUIMessageStreamResponse();
